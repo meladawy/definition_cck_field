@@ -1,0 +1,5 @@
+name = Definition cck field
+description = A definition list is a list of items, with a description of each item.
+core = 7.x 
+files[] = definition_cck_field.module
+package = fields
