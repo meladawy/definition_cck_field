@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * 
+ * Define the schema columns of the definition field.
+ */
+
+/**
+ * Implementation of hook_field_schema().
+ */
+function definition_cck_field_field_schema($field) {
+  $columns = array(
+  'definition_title' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE ) ,
+  'definition_description' => array('type' => 'text', 'not null' => FALSE ) ,
+  );
+  $indexes = array(
+  'definition_title' => array('definition_title'),
+  );
+  return array(
+  'columns' => $columns,
+  'indexes' => $indexes,
+  );
+}

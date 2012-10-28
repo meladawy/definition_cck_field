@@ -1,5 +1,221 @@
+<?php
+
 /**
-* This module add a new widget to CCK to allow the users Definition/Term field.
+* This module add a new Term/Definition field type to CCK.
 */
 
+/**
+ * Implements hook_field_info().
+ *
+ * Provides the description of the field.
+ */
+ 
+function definition_cck_field_field_info() {
+  return array(
+  'field_definitions_term' => array(
+  'label' => t('Definition Term'),
+  'description' => t('Definition term with description'),
+  'default_formatter' => 'field_definition_term_formatter_default',
+  'default_widget' => 'field_definition_term_widget_default',
+  ),
+  );
+}
 
+/**
+ * Implements of hook_field_is_empty()
+ *
+ * Provide the state of the field when empty.
+ */
+ 
+function definition_cck_field_field_is_empty($item, $field) {
+  return (empty($item['definition_title']) || empty($item['definition_description'])) ; 
+}
+ 
+/**
+ * Implements of hook_field_formatter_info().
+ * 
+ * Provide the description of the formatter.
+ */
+
+function definition_cck_field_field_formatter_info() {
+  return array(
+  'field_definition_term_formatter_default' => array(
+  'label' => t('Definition list'), 
+  'field types' => array('field_definitions_term'),
+  'settings'  => array( 
+  'field_definition_term_formatter_default_field_class' => "",
+  ),
+  ),
+  'field_definition_term_formatter_fieldset' => array(
+  'label' => t('Fieldset'), 
+  'field types' => array('field_definitions_term'),
+  'settings'  => array( 
+  'field_definition_term_formatter_fieldset_field_class' => "",
+  'collapsible' => 0, //Is it collapsible.
+  'collapsed' => 0 , // Is it collapsed by default.
+  ),
+  ),
+  );  
+}
+
+/**
+ * Implements of hook_field_formatter_view().
+ *
+ * How fields will be displayed.
+ */
+
+function definition_cck_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array() ; 
+  switch ($display['type']) {
+  case 'field_definition_term_formatter_default' : 
+  $default_formatter_class = !empty($display['settings']['field_definition_term_formatter_default_field_class']) ? filter_xss($display['settings']['field_definition_term_formatter_default_field_class'])  : "" ;
+  foreach ($items as $delta => $item) {
+  $element[$delta] = array(
+  '#type' => 'item' , 
+  '#title' => $item['definition_title'], 
+  '#markup' => $item['definition_description'],
+  '#prefix' => "<div class='" . $default_formatter_class . "'>",
+  '#suffix' => "</div>" , 
+  );
+  }
+  break ;
+  case 'field_definition_term_formatter_fieldset' : 
+  drupal_add_js(url('misc/collapse.js', array('absolute' => TRUE))) ;
+  $fieldset_formatter_class = !empty($display['settings']['field_definition_term_formatter_fieldset_field_class']) ? filter_xss($display['settings']['field_definition_term_formatter_fieldset_field_class'])  : "" ;
+  $collapsible = !empty($display['settings']['collapsible']) ?  "collapsible" : "" ;
+  $collapsed = !empty($display['settings']['collapsed']) ?  "collapsed" : "" ;  
+  foreach ($items as $delta => $item) {
+  $element[$delta] = array(
+  '#type' => 'fieldset' , 
+  '#title' => $item['definition_title'], 
+  '#attributes' => array('class' => array($collapsible, $collapsed, $fieldset_formatter_class)),
+  );
+  $element[$delta]['description'] = array(
+  '#markup' => $item['definition_description'], 
+  );  
+  }
+  break ;    
+  }
+  
+  return $element ; 
+}
+
+/**
+ * Implements of hook_field_formatter_settings_form().
+ *
+ * Formatters settings.
+ */
+ 
+function definition_cck_field_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $element = array();
+  if ($display['type'] == 'field_definition_term_formatter_default') {
+  $element['field_definition_term_formatter_default_field_class'] = array(
+  '#title' => t('Field class'), 
+  '#type' => 'textfield', 
+  '#default_value' => $settings['field_definition_term_formatter_default_field_class'], 
+  ); 
+  }
+  if ($display['type'] == 'field_definition_term_formatter_fieldset') {
+  $element['field_definition_term_formatter_fieldset_field_class'] = array(
+  '#title' => t('Field class'), 
+  '#type' => 'textfield', 
+  '#default_value' => $settings['field_definition_term_formatter_fieldset_field_class'], 
+  );
+  $element['collapsible'] = array(
+  '#title' => t('Collapsible'), 
+  '#type' => 'checkbox', 
+  '#default_value' => $settings['collapsible'], 
+  );
+  $element['collapsed'] = array(
+  '#title' => t('Collapsed by default'), 
+  '#type' => 'checkbox', 
+  '#default_value' => $settings['collapsed'], 
+  '#states' => array(
+  'disabled' => array(
+  ':input[name="fields[field_features][settings_edit_form][settings][collapsible]"]' => array('unchecked' => TRUE),
+  ),
+  ),
+  );  
+  }
+  return $element;
+}
+
+/**
+ * Implements of hook_field_formatter_settings_summary().
+ *
+ * This displays the chosen settings on the 'Manage Display' page.
+ */
+ 
+function definition_cck_field_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = "";
+  if ($display['type'] == 'field_definition_term_formatter_default') {
+  $default_formatter_class = !empty($settings['field_definition_term_formatter_default_field_class']) ? t('Field class : @custom_class' , array('@custom_class' => $settings['field_definition_term_formatter_default_field_class'] ))  : "Add custom class." ; 
+  $summary = $default_formatter_class ; 
+  }
+  if ($display['type'] == 'field_definition_term_formatter_fieldset') {
+  $fieldset_formatter_class = !empty($settings['field_definition_term_formatter_fieldset_field_class']) ? $settings['field_definition_term_formatter_fieldset_field_class'] : "" ; 
+  $collapsible_status = !empty($settings['collapsible']) ? t('True') : t('False') ; 
+  $collapsed_status = !empty($settings['collapsed']) ? t('True') : t('False') ; 
+
+  $summary .= t('Collapsible: @collapsibe_status', array('@collapsibe_status' => $collapsible_status) );
+  $summary .= "<br>" . t('Collapsed by default: @collapsed', array('@collapsed' => $collapsed_status) );
+  }
+
+  return $summary;
+}
+
+/**
+ * Implements of hook_field_widget_info().
+ *
+ * Provides information about the new widgets. 
+ */
+
+function definition_cck_field_field_widget_info() {
+  return array(
+  'field_definition_term_widget_default' => array(
+  'label' => t('Textfields'),
+  'field types' => array('field_definitions_term'),
+  ),
+  );
+}
+
+/**
+ * Implements of hook_field_widget_form().
+ *
+ * The form of the new widget.
+ */
+ 
+ function definition_cck_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $definition_term_title_value = !empty($items[$delta]['definition_title']) ? $items[$delta]['definition_title'] : "" ;
+  $definition_term_description_value =  !empty($items[$delta]['definition_description']) ? $items[$delta]['definition_description'] : "" ;
+  
+  $definition_title_widget = $element ; 
+  $definition_title_widget['#delta'] =  $delta ; 
+  
+  $definition_description_widget = $element ; 
+  $definition_description_widget['#delta'] =  $delta; 
+  
+  switch ($instance['widget']['type']) {
+  case 'field_definition_term_widget_default':
+  $definition_title_widget += array(
+  '#type' => 'textfield',
+  '#default_value' => $definition_term_title_value,
+  '#attributes' => array('class' => array('field-definition-term-title')),
+  );
+  $definition_description_widget += array(
+  '#type' => 'textarea',
+  '#default_value' => $definition_term_description_value,
+  '#attributes' => array('class' => array('field-definition-term-description')),
+  );  
+  break ; 
+  }
+  
+  $element['definition_title'] = $definition_title_widget ; 
+  $element['definition_description'] = $definition_description_widget ; 
+  return $element ; 
+ }
