@@ -193,29 +193,29 @@ function definition_cck_field_field_widget_info() {
  function definition_cck_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   $definition_term_title_value = !empty($items[$delta]['definition_title']) ? $items[$delta]['definition_title'] : "" ;
   $definition_term_description_value =  !empty($items[$delta]['definition_description']) ? $items[$delta]['definition_description'] : "" ;
-  
-  $definition_title_widget = $element ; 
-  $definition_title_widget['#delta'] =  $delta ; 
-  
-  $definition_description_widget = $element ; 
-  $definition_description_widget['#delta'] =  $delta; 
-  
+
+
+  $definition_widget = $element ; 
+  $definition_widget['#delta'] =  $delta ; 
+
   switch ($instance['widget']['type']) {
   case 'field_definition_term_widget_default':
-  $definition_title_widget += array(
+  $definition_widget['definition_title'] = array(
   '#type' => 'textfield',
+  '#title' => t('@label', array('@label' => $instance['label'])) ,
   '#default_value' => $definition_term_title_value,
   '#attributes' => array('class' => array('field-definition-term-title')),
   );
-  $definition_description_widget += array(
+  $definition_widget['definition_description'] = array(
   '#type' => 'textarea',
   '#default_value' => $definition_term_description_value,
   '#attributes' => array('class' => array('field-definition-term-description')),
   );  
   break ; 
   }
-  
-  $element['definition_title'] = $definition_title_widget ; 
-  $element['definition_description'] = $definition_description_widget ; 
+ 
+  $element['definition_title'] = $definition_widget['definition_title'] ;   
+  $element['definition_description'] = $definition_widget['definition_description'] ; 
+
   return $element ; 
  }
